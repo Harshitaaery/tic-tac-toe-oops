@@ -1,162 +1,98 @@
 package com.tictactoe;
-import java.util.Scanner;
 
-// Player Class
-class Player {
-    private String name;
-    private char symbol; // 'X' or 'O'
+import java.util.Random;
 
-    public Player(String name, char symbol) {
-        this.name = name;
-        this.symbol = symbol;
-    }
+public class TicTacToe {
 
-    public String getName() {
-        return name;
-    }
-
-    public char getSymbol() {
-        return symbol;
-    }
-}
-
-// Board Class
-class Board {
-    private char[][] grid;
     private final int SIZE = 3;
+    private char[][] board = new char[SIZE][SIZE];
+    private final char PLAYER_SYMBOL = 'X';
+    private final char COMPUTER_SYMBOL = 'O';
+    private Random random = new Random();
 
-    public Board() {
-        grid = new char[SIZE][SIZE];
-        initializeBoard();
+    public TicTacToe() {
+        resetBoard();
     }
 
-    private void initializeBoard() {
-        for (int i = 0; i < SIZE; i++) {
-            for (int j = 0; j < SIZE; j++) {
-                grid[i][j] = ' ';
-            }
-        }
+    public int getSize() {
+        return SIZE;
     }
 
-    public void display() {
-        System.out.println("-------------");
-        for (int i = 0; i < SIZE; i++) {
-            System.out.print("| ");
-            for (int j = 0; j < SIZE; j++) {
-                System.out.print(grid[i][j] + " | ");
-            }
-            System.out.println();
-            System.out.println("-------------");
-        }
+    public char getPlayerSymbol() {
+        return PLAYER_SYMBOL;
     }
 
-    public boolean makeMove(int row, int col, char symbol) {
-        if (row >= 0 && row < SIZE && col >= 0 && col < SIZE && grid[row][col] == ' ') {
-            grid[row][col] = symbol;
+    public char getComputerSymbol() {
+        return COMPUTER_SYMBOL;
+    }
+
+    public char[][] getBoard() {
+        return board;
+    }
+
+    public boolean isCellEmpty(int row, int col) {
+        return board[row][col] == ' ';
+    }
+
+    public boolean makePlayerMove(int row, int col) {
+        if (board[row][col] == ' ') {
+            board[row][col] = PLAYER_SYMBOL;
             return true;
         }
         return false;
     }
 
-    public boolean isWinner(char symbol) {
-        // Check rows
-        for (int i = 0; i < SIZE; i++) {
-            if (grid[i][0] == symbol && grid[i][1] == symbol && grid[i][2] == symbol) {
-                return true;
-            }
-        }
-        // Check columns
-        for (int j = 0; j < SIZE; j++) {
-            if (grid[0][j] == symbol && grid[1][j] == symbol && grid[2][j] == symbol) {
-                return true;
-            }
-        }
-        // Check diagonals
-        if (grid[0][0] == symbol && grid[1][1] == symbol && grid[2][2] == symbol) {
-            return true;
-        }
-        if (grid[0][2] == symbol && grid[1][1] == symbol && grid[2][0] == symbol) {
-            return true;
-        }
-        return false;
+    public int[] makeComputerMove() {
+        int[] move = getComputerMove();
+        board[move[0]][move[1]] = COMPUTER_SYMBOL;
+        return move;
     }
 
-    public boolean isFull() {
+    // Dumb AI: block immediate player win, else random
+    private int[] getComputerMove() {
         for (int i = 0; i < SIZE; i++) {
             for (int j = 0; j < SIZE; j++) {
-                if (grid[i][j] == ' ') {
-                    return false;
+                if (board[i][j] == ' ') {
+                    board[i][j] = PLAYER_SYMBOL;
+                    if (checkWinner(PLAYER_SYMBOL)) {
+                        board[i][j] = ' ';
+                        return new int[]{i, j};
+                    }
+                    board[i][j] = ' ';
                 }
             }
         }
+        int row, col;
+        do {
+            row = random.nextInt(SIZE);
+            col = random.nextInt(SIZE);
+        } while (board[row][col] != ' ');
+        return new int[]{row, col};
+    }
+
+    public boolean checkWinner(char symbol) {
+        for (int i = 0; i < SIZE; i++) {
+            if ((board[i][0] == symbol && board[i][1] == symbol && board[i][2] == symbol) ||
+                (board[0][i] == symbol && board[1][i] == symbol && board[2][i] == symbol))
+                return true;
+        }
+        if ((board[0][0] == symbol && board[1][1] == symbol && board[2][2] == symbol) ||
+            (board[0][2] == symbol && board[1][1] == symbol && board[2][0] == symbol))
+            return true;
+        return false;
+    }
+
+    public boolean isBoardFull() {
+        for (int i = 0; i < SIZE; i++)
+            for (int j = 0; j < SIZE; j++)
+                if (board[i][j] == ' ') return false;
         return true;
     }
-}
 
-// Game Class
-class Game {
-    private Board board;
-    private Player player1;
-    private Player player2;
-    private Player currentPlayer;
-    private Scanner scanner;
-
-    public Game(Player p1, Player p2) {
-        this.board = new Board();
-        this.player1 = p1;
-        this.player2 = p2;
-        this.currentPlayer = p1;
-        this.scanner = new Scanner(System.in);
-    }
-
-    public void play() {
-        System.out.println("Welcome to Tic-Tac-Toe!");
-        while (true) {
-            board.display();
-            System.out.println(currentPlayer.getName() + "'s turn (" + currentPlayer.getSymbol() + ")");
-            System.out.print("Enter row (0-2) and column (0-2): ");
-            
-            int row = scanner.nextInt();
-            int col = scanner.nextInt();
-
-            if (board.makeMove(row, col, currentPlayer.getSymbol())) {
-                if (board.isWinner(currentPlayer.getSymbol())) {
-                    board.display();
-                    System.out.println(currentPlayer.getName() + " wins!");
-                    break;
-                }
-                if (board.isFull()) {
-                    board.display();
-                    System.out.println("It's a draw!");
-                    break;
-                }
-                switchTurn();
-            } else {
-                System.out.println("Invalid move, try again.");
-            }
-        }
-    }
-
-    private void switchTurn() {
-        currentPlayer = (currentPlayer == player1) ? player2 : player1;
+    public void resetBoard() {
+        for (int i = 0; i < SIZE; i++)
+            for (int j = 0; j < SIZE; j++)
+                board[i][j] = ' ';
     }
 }
 
-// Main Class
-public class TicTacToe {
-    public static void main(String[] args) {
-        Scanner sc = new Scanner(System.in);
-        System.out.print("Enter name for Player 1: ");
-        String name1 = sc.nextLine();
-        Player p1 = new Player(name1, 'X');
-
-        System.out.print("Enter name for Player 2: ");
-        String name2 = sc.nextLine();
-        Player p2 = new Player(name2, 'O');
-
-        Game game = new Game(p1, p2);
-        game.play();
-
-        sc.close();
-    }
-}

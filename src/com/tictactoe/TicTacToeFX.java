@@ -1,147 +1,165 @@
 package com.tictactoe;
 
 import javafx.application.Application;
-import javafx.geometry.Pos;
+import javafx.application.Platform;
+import javafx.animation.PauseTransition;
 import javafx.scene.Scene;
 import javafx.scene.control.Alert;
 import javafx.scene.control.Button;
+import javafx.scene.control.Label;
 import javafx.scene.control.TextInputDialog;
 import javafx.scene.layout.GridPane;
+import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
-import javafx.scene.text.Text;
 import javafx.stage.Stage;
+import javafx.util.Duration;
 
 import java.util.Optional;
 
 public class TicTacToeFX extends Application {
-    private Button[][] buttons = new Button[3][3];
-    private boolean playerXTurn = true;
-    private String playerXName;
-    private String playerOName;
-    private Text turnLabel;
+
+    private TicTacToe game = new TicTacToe();
+    private Button[][] buttons;
+    private boolean playerTurn = true;
+    private String playerName = "Player";
+    private Label turnLabel = new Label();
+
+    public static void main(String[] args) {
+        launch(args);
+    }
 
     @Override
     public void start(Stage primaryStage) {
-        // Ask for player names
-        playerXName = askName("Enter name for Player X:");
-        playerOName = askName("Enter name for Player O:");
 
-        turnLabel = new Text(playerXName + "'s Turn (X)");
-        turnLabel.setStyle("-fx-font-size: 18px; -fx-fill: black;");
+        // Ask for player name
+        TextInputDialog dialog = new TextInputDialog("Player");
+        dialog.setTitle("Enter Name");
+        dialog.setHeaderText("Welcome to Tic Tac Toe!");
+        dialog.setContentText("Please enter your name:");
+        Optional<String> result = dialog.showAndWait();
+        result.ifPresent(name -> playerName = name);
 
-        // Grid for game board
+        // Grid setup
+        int SIZE = game.getSize();
+        buttons = new Button[SIZE][SIZE];
         GridPane grid = new GridPane();
-        grid.setAlignment(Pos.CENTER);
-        grid.setHgap(10);
-        grid.setVgap(10);
-        // Barbie pink board
-        grid.setStyle("-fx-background-color: #FF69B4; -fx-padding: 20; -fx-background-radius: 15;");
+        grid.setHgap(5);
+        grid.setVgap(5);
 
-        // Create buttons (tiles)
-        for (int i = 0; i < 3; i++) {
-            for (int j = 0; j < 3; j++) {
-                Button btn = new Button("");
+        for (int i = 0; i < SIZE; i++) {
+            for (int j = 0; j < SIZE; j++) {
+                Button btn = new Button(" ");
                 btn.setPrefSize(100, 100);
-                // Lavender tiles, bold text
-                btn.setStyle("-fx-font-size: 28px; -fx-background-color: #B57EDC; -fx-text-fill: black; -fx-font-weight: bold; -fx-background-radius: 10;");
-                final int row = i, col = j;
-                btn.setOnAction(e -> handleMove(btn, row, col));
+                btn.setStyle(
+                        "-fx-background-color: #B57EDC; " + // Lavender Flower
+                        "-fx-font-size: 36px; " +
+                        "-fx-font-weight: bold; " +
+                        "-fx-border-color: #FFFFFF; " + // white border
+                        "-fx-border-width: 3px;"
+                );
+                int row = i;
+                int col = j;
+                btn.setOnAction(e -> handlePlayerMove(row, col));
                 buttons[i][j] = btn;
                 grid.add(btn, j, i);
             }
         }
 
-        // Root VBox with light pink background
-        VBox root = new VBox(15, turnLabel, grid);
-        root.setAlignment(Pos.CENTER);
-        root.setStyle("-fx-background-color: #FFB6C1; -fx-padding: 20;");
+        // Turn label
+        turnLabel.setText(playerName + "'s Turn (X)");
+        turnLabel.setStyle("-fx-font-size: 16px; -fx-font-weight: bold; -fx-text-fill: #FFFFFF;");
 
-        Scene scene = new Scene(root, 400, 500);
-        primaryStage.setTitle("Tic Tac Toe - Pink & Purple Edition");
+        // Reset button
+        Button resetBtn = new Button("Reset Board");
+        resetBtn.setStyle(
+                "-fx-background-color: #E0218A; " + // Barbie Pink
+                "-fx-font-size: 16px; " +
+                "-fx-font-weight: bold; " +
+                "-fx-text-fill: #FFFFFF;"
+        );
+        resetBtn.setOnAction(e -> resetBoard());
+
+        HBox bottomBox = new HBox(10, resetBtn);
+        bottomBox.setStyle("-fx-alignment: center;");
+
+        VBox root = new VBox(15, turnLabel, grid, bottomBox);
+        root.setStyle(
+                "-fx-padding: 20; " +
+                "-fx-alignment: center; " +
+                "-fx-background-color: #E0218A;" // Barbie Pink
+        );
+
+        Scene scene = new Scene(root);
+        primaryStage.setTitle("Tic Tac Toe");
         primaryStage.setScene(scene);
         primaryStage.show();
     }
 
-    private String askName(String prompt) {
-        TextInputDialog dialog = new TextInputDialog();
-        dialog.setTitle("Player Name");
-        dialog.setHeaderText(prompt);
-        dialog.setContentText("Name:");
-        Optional<String> result = dialog.showAndWait();
-        return result.orElse("Player");
-    }
+    private void handlePlayerMove(int row, int col) {
+        if (!playerTurn || !game.isCellEmpty(row, col)) return;
 
-    private void handleMove(Button btn, int row, int col) {
-        if (!btn.getText().isEmpty()) return; // ignore if already clicked
+        game.makePlayerMove(row, col);
+        buttons[row][col].setText(String.valueOf(game.getPlayerSymbol()));
 
-        String symbol = playerXTurn ? "X" : "O";
-        btn.setText(symbol);
-
-        if (checkWinner(symbol)) {
-            String winnerName = playerXTurn ? playerXName : playerOName;
-            showAlert("Game Over", winnerName + " (" + symbol + ") wins!");
-            resetBoard();
+        if (game.checkWinner(game.getPlayerSymbol())) {
+            showAlert(playerName + " wins!");
             return;
         }
 
-        if (isBoardFull()) {
-            showAlert("Game Over", "It's a Draw!");
-            resetBoard();
+        if (game.isBoardFull()) {
+            showAlert("It's a Draw!");
             return;
         }
 
-        // Switch turn
-        playerXTurn = !playerXTurn;
-        turnLabel.setText((playerXTurn ? playerXName : playerOName) + "'s Turn (" + (playerXTurn ? "X" : "O") + ")");
+        playerTurn = false;
+        turnLabel.setText("Computer's Turn (O)");
+
+        // PauseTransition to ensure UI updates before computer moves
+        PauseTransition pause = new PauseTransition(Duration.millis(300));
+        pause.setOnFinished(e -> computerMove());
+        pause.play();
     }
 
-    private boolean checkWinner(String symbol) {
-        // Rows & Columns
-        for (int i = 0; i < 3; i++) {
-            if (buttons[i][0].getText().equals(symbol) &&
-                buttons[i][1].getText().equals(symbol) &&
-                buttons[i][2].getText().equals(symbol)) return true;
+    private void computerMove() {
+        int[] move = game.makeComputerMove();
+        buttons[move[0]][move[1]].setText(String.valueOf(game.getComputerSymbol()));
 
-            if (buttons[0][i].getText().equals(symbol) &&
-                buttons[1][i].getText().equals(symbol) &&
-                buttons[2][i].getText().equals(symbol)) return true;
-        }
-        // Diagonals
-        if (buttons[0][0].getText().equals(symbol) &&
-            buttons[1][1].getText().equals(symbol) &&
-            buttons[2][2].getText().equals(symbol)) return true;
+        PauseTransition pause = new PauseTransition(Duration.millis(100));
+        pause.setOnFinished(e -> {
+            if (game.checkWinner(game.getComputerSymbol())) {
+                showAlert("Computer wins!");
+                return;
+            }
 
-        if (buttons[0][2].getText().equals(symbol) &&
-            buttons[1][1].getText().equals(symbol) &&
-            buttons[2][0].getText().equals(symbol)) return true;
+            if (game.isBoardFull()) {
+                showAlert("It's a Draw!");
+                return;
+            }
 
-        return false;
+            playerTurn = true;
+            turnLabel.setText(playerName + "'s Turn (X)");
+        });
+        pause.play();
     }
 
-    private boolean isBoardFull() {
-        for (int i = 0; i < 3; i++)
-            for (int j = 0; j < 3; j++)
-                if (buttons[i][j].getText().isEmpty()) return false;
-        return true;
+    private void showAlert(String message) {
+        Platform.runLater(() -> {
+            Alert alert = new Alert(Alert.AlertType.INFORMATION);
+            alert.setTitle("Game Over");
+            alert.setHeaderText(null);
+            alert.setContentText(message);
+            alert.showAndWait();
+            resetBoard();
+        });
     }
 
     private void resetBoard() {
-        for (int i = 0; i < 3; i++)
-            for (int j = 0; j < 3; j++)
-                buttons[i][j].setText("");
-        playerXTurn = true;
-        turnLabel.setText(playerXName + "'s Turn (X)");
-    }
-
-    private void showAlert(String title, String message) {
-        Alert alert = new Alert(Alert.AlertType.INFORMATION);
-        alert.setTitle(title);
-        alert.setHeaderText(null);
-        alert.setContentText(message);
-        alert.showAndWait();
-    }
-
-    public static void main(String[] args) {
-        launch(args);
+        game.resetBoard();
+        int SIZE = game.getSize();
+        for (int i = 0; i < SIZE; i++)
+            for (int j = 0; j < SIZE; j++)
+                buttons[i][j].setText(" ");
+        playerTurn = true;
+        turnLabel.setText(playerName + "'s Turn (X)");
     }
 }

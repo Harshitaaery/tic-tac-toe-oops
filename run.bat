@@ -1,7 +1,16 @@
 @echo off
 echo Compiling TicTacToeFX...
-javac --module-path "C:\javafx-sdk-24\lib" --add-modules=javafx.controls -d . src\com\tictactoe\TicTacToeFX.java
+
+REM Compile all Java files in the package
+javac --module-path "C:\javafx-sdk-24\lib" --add-modules javafx.controls -d . src\com\tictactoe\*.java
+
+if %errorlevel% neq 0 (
+    echo Compilation failed!
+    pause
+    exit /b %errorlevel%
+)
 
 echo Running TicTacToeFX...
-java --module-path "C:\javafx-sdk-24\lib" --add-modules=javafx.controls com.tictactoe.TicTacToeFX
+java --module-path "C:\javafx-sdk-24\lib" --add-modules javafx.controls com.tictactoe.TicTacToeFX
+
 pause

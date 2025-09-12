@@ -27,21 +27,23 @@ public class TicTacToeFX extends Application {
         playerOName = askName("Enter name for Player O:");
 
         turnLabel = new Text(playerXName + "'s Turn (X)");
-        turnLabel.setStyle("-fx-font-size: 18px; -fx-fill: purple;");
+        turnLabel.setStyle("-fx-font-size: 18px; -fx-fill: black;");
 
         // Grid for game board
         GridPane grid = new GridPane();
         grid.setAlignment(Pos.CENTER);
         grid.setHgap(10);
         grid.setVgap(10);
-        grid.setStyle("-fx-background-color: pink; -fx-padding: 20;");
+        // Barbie pink board
+        grid.setStyle("-fx-background-color: #FF69B4; -fx-padding: 20; -fx-background-radius: 15;");
 
-        // Create buttons
+        // Create buttons (tiles)
         for (int i = 0; i < 3; i++) {
             for (int j = 0; j < 3; j++) {
                 Button btn = new Button("");
                 btn.setPrefSize(100, 100);
-                btn.setStyle("-fx-font-size: 28px; -fx-background-color: lavender; -fx-text-fill: purple; -fx-font-weight: bold;");
+                // Lavender tiles, bold text
+                btn.setStyle("-fx-font-size: 28px; -fx-background-color: #B57EDC; -fx-text-fill: black; -fx-font-weight: bold; -fx-background-radius: 10;");
                 final int row = i, col = j;
                 btn.setOnAction(e -> handleMove(btn, row, col));
                 buttons[i][j] = btn;
@@ -49,9 +51,10 @@ public class TicTacToeFX extends Application {
             }
         }
 
+        // Root VBox with light pink background
         VBox root = new VBox(15, turnLabel, grid);
         root.setAlignment(Pos.CENTER);
-        root.setStyle("-fx-background-color: pink; -fx-padding: 20;");
+        root.setStyle("-fx-background-color: #FFB6C1; -fx-padding: 20;");
 
         Scene scene = new Scene(root, 400, 500);
         primaryStage.setTitle("Tic Tac Toe - Pink & Purple Edition");
